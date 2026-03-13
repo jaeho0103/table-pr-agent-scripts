@@ -1,0 +1,8 @@
+{
+  "github_token": "your_github_pat_here",
+  "upstream_repo": "planetarium/lib9c",
+  "fork_owner": "your_github_username",
+  "base_branch": "development",
+  "spreadsheet_id": "your_google_spreadsheet_id",
+  "csv_path": "Lib9c/TableCSV"
+}
