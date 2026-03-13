@@ -14,6 +14,7 @@ import csv
 import io
 import base64
 import sys
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,8 +28,25 @@ UPSTREAM_REPO  = config["upstream_repo"]
 FORK_OWNER     = config["fork_owner"]
 FORK_REPO      = f"{FORK_OWNER}/lib9c"
 BASE_BRANCH    = config["base_branch"]
-SPREADSHEET_ID = config["spreadsheet_id"]
 CSV_PATH       = config["csv_path"]
+
+# CLI 인자로 시트 URL 받기 (없으면 config 기본값 사용)
+def parse_spreadsheet_id(arg=None):
+    if arg:
+        # URL에서 ID 추출: /spreadsheets/d/{ID}/
+        m = re.search(r'/spreadsheets/d/([a-zA-Z0-9_-]+)', arg)
+        if m:
+            sid = m.group(1)
+            # config에 저장
+            config["spreadsheet_id"] = sid
+            CONFIG_FILE.write_text(json.dumps(config, indent=2, ensure_ascii=False))
+            print(f"📋 시트 URL 업데이트: {sid}")
+            return sid
+        else:
+            print(f"⚠️  URL 파싱 실패, 기존 시트 사용")
+    return config["spreadsheet_id"]
+
+SPREADSHEET_ID = parse_spreadsheet_id(sys.argv[1] if len(sys.argv) > 1 else None)
 
 # 구글 시트에 존재하는 탭 목록 (repo에 매핑되는 것만)
 ALL_TABS = [
