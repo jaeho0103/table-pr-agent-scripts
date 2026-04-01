@@ -45,25 +45,12 @@ def block_to_date(target, ref_block, ref_time=REF_TIME, rate=8):
 
 # ─── Reward tables ────────────────────────────────────────────────────────────
 
-CHAMP_GROUPS = [
-    # Championship (1000 players) — update when confirmed
-    ("Rank 1 – 5",     5,  10),
-    ("Rank 6 – 10",    5,   8),
-    ("Rank 11 – 17",   7,   9),
-    ("Rank 18 – 30",  13,  12),
-    ("Rank 31 – 50",  20,  12),
-    ("Rank 51 – 100", 50,  15),
-    ("Rank 101 – 175",75,  15),
-    ("Rank 176 – 250",75,  13),
-    ("Rank 251 – 500",250,  4),
-    ("Rank 501 – 1000",500, 2),
-]
-SEASON_GROUPS = [
-    # Season (500 players) — verified against Championship 16 season data
+# Both Season and Championship use the same 500-player structure
+_GROUPS_500 = [
     ("Rank 1 – 2",    2,   8),
     ("Rank 3 – 5",    3,   9),
     ("Rank 6 – 9",    4,   8),
-    ("Rank 10 – 15",  6,  10),   # fixed: was 16
+    ("Rank 10 – 15",  6,  10),
     ("Rank 16 – 25", 10,  12),
     ("Rank 26 – 50", 25,  18),
     ("Rank 51 – 87", 37,  16),
@@ -71,6 +58,8 @@ SEASON_GROUPS = [
     ("Rank 126 – 250",125, 5),
     ("Rank 251 – 500",250, 3),
 ]
+CHAMP_GROUPS  = _GROUPS_500
+SEASON_GROUPS = _GROUPS_500
 
 # Staking/courage reward multipliers (relative to base unit):
 #   None=÷3.2, lv2=×1.5, lv3=×2.0, courage=×2.2, lv2+cp=×2.7, Full(lv3+cp)=×3.2
