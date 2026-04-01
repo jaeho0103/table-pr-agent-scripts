@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# arena — 아레나 보상 공지 PPTX 생성기
+#
+# 사용법:
+#   arena <odin_type> <odin_num> <odin_start> <odin_end> \
+#         <heim_type> <heim_num> <heim_start> <heim_end>
+#
+# 예시:
+#   arena Championship 16 17889224 18040423 Season 21 9412781 9563980
+#
+# odin_type / heim_type: Championship | Season
+# 상금 자동: Championship=500,000 / Season=400,000
+
+# 심볼릭 링크를 따라 실제 스크립트 위치로 이동
+REAL_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$REAL_PATH")"
+python3 "$SCRIPT_DIR/create-arena-pptx.py" "$@"
