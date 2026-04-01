@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """
 Arena reward announcement PPTX generator.
-Generates a 2-slide PPTX: [1] Odin Championship  [2] Heimdall Season
+Generates a 2-slide PPTX: [1] Odin slide  [2] Heimdall slide
 
 Usage:
   python3 create-arena-pptx.py \\
-    <odin_champ_num> <odin_start> <odin_end> <odin_prize> <odin_cur_block> \\
-    <heim_season_num> <heim_start> <heim_end> <heim_prize> <heim_cur_block> \\
-    [rounds] [interval] [medals]
+    <odin_type> <odin_num> <odin_start> <odin_end> \\
+    <heim_type> <heim_num> <heim_start> <heim_end>
+
+  odin_type / heim_type: Championship | Season
+  Prize is auto-set: Championship=500,000 / Season=400,000
+  Block reference points are fixed in script constants.
 
 Example:
   python3 create-arena-pptx.py \\
-    21 17889224 18040423 500000 17862624 \\
-    21 9412781 9563980 400000 9365492
+    Championship 16 17889224 18040423 \\
+    Season 21 9412781 9563980
 """
 
 import sys, os, re, copy, zipfile, math
@@ -35,11 +38,14 @@ SLIDE_SEASON_RELS  = 'ppt/slides/_rels/slide3.xml.rels'
 
 # ─── Date helpers ─────────────────────────────────────────────────────────────
 
-# Reference points per chain (update before each run)
+# Reference points per chain — fixed, used for all future date calculations
 ODIN_REF_BLOCK = 17_862_624
 ODIN_REF_TIME  = datetime(2026, 4, 1,  5, 58, 0, tzinfo=timezone.utc)
 HEIM_REF_BLOCK =  9_365_492
 HEIM_REF_TIME  = datetime(2026, 4, 1,  6, 56, 0, tzinfo=timezone.utc)
+
+# Prize pool by arena type (Championship=500k, Season=400k)
+PRIZE_MAP = {'Championship': 500_000, 'Season': 400_000}
 
 def block_to_date(target, ref_block, ref_time, rate=8):
     dt = ref_time + timedelta(seconds=(target - ref_block) * rate)
@@ -243,22 +249,23 @@ def trim_prs_rels(rels_bytes, keep_rids):
 # ─── Main generator ───────────────────────────────────────────────────────────
 
 def generate(
-    odin_num, odin_start, odin_end, odin_prize, odin_cur,
-    heim_num, heim_start, heim_end, heim_prize, heim_cur,
+    odin_type, odin_num, odin_start, odin_end,
+    heim_type, heim_num, heim_start, heim_end,
     rounds=14, interval=10800, medals=60,
-    odin_ref_time=ODIN_REF_TIME, odin_ref_block=ODIN_REF_BLOCK,
-    heim_ref_time=HEIM_REF_TIME, heim_ref_block=HEIM_REF_BLOCK,
 ):
-    odin_start_date = block_to_date(odin_start, odin_ref_block, odin_ref_time)
-    odin_end_date   = block_to_date(odin_end,   odin_ref_block, odin_ref_time)
-    heim_start_date = block_to_date(heim_start, heim_ref_block, heim_ref_time)
-    heim_end_date   = block_to_date(heim_end,   heim_ref_block, heim_ref_time)
+    odin_prize = PRIZE_MAP[odin_type]
+    heim_prize = PRIZE_MAP[heim_type]
 
-    print(f'[Odin] Championship {odin_num}: {fmt(odin_start)} ({odin_start_date}) ~ {fmt(odin_end)} ({odin_end_date}), Prize={fmt(odin_prize)}')
-    print(f'[Heimdall] Season {heim_num}: {fmt(heim_start)} ({heim_start_date}) ~ {fmt(heim_end)} ({heim_end_date}), Prize={fmt(heim_prize)}')
+    odin_start_date = block_to_date(odin_start, ODIN_REF_BLOCK, ODIN_REF_TIME)
+    odin_end_date   = block_to_date(odin_end,   ODIN_REF_BLOCK, ODIN_REF_TIME)
+    heim_start_date = block_to_date(heim_start, HEIM_REF_BLOCK, HEIM_REF_TIME)
+    heim_end_date   = block_to_date(heim_end,   HEIM_REF_BLOCK, HEIM_REF_TIME)
+
+    print(f'[Odin] {odin_type} {odin_num}: {fmt(odin_start)} ({odin_start_date}) ~ {fmt(odin_end)} ({odin_end_date}), Prize={fmt(odin_prize)}')
+    print(f'[Heimdall] {heim_type} {heim_num}: {fmt(heim_start)} ({heim_start_date}) ~ {fmt(heim_end)} ({heim_end_date}), Prize={fmt(heim_prize)}')
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_file = os.path.join(OUTPUT_DIR, f'arena_Odin_Championship{odin_num}_Heimdall_Season{heim_num}.pptx')
+    out_file = os.path.join(OUTPUT_DIR, f'arena_Odin_{odin_type}{odin_num}_Heimdall_{heim_type}{heim_num}.pptx')
 
     # Determine which rIds correspond to slide3 and slide4
     CHAMP_RIDS = {'rId9'}   # slide4 = Championship
@@ -275,13 +282,13 @@ def generate(
             data = zin.read(fn)
 
             if fn == SLIDE_CHAMPIONSHIP:
-                data = modify_slide(data, 'Odin', 'Championship', odin_num,
+                data = modify_slide(data, 'Odin', odin_type, odin_num,
                                     odin_start, odin_start_date,
                                     odin_end,   odin_end_date,
                                     odin_prize, rounds, interval, medals)
 
             elif fn == SLIDE_SEASON:
-                data = modify_slide(data, 'Heimdall', 'Season', heim_num,
+                data = modify_slide(data, 'Heimdall', heim_type, heim_num,
                                     heim_start, heim_start_date,
                                     heim_end,   heim_end_date,
                                     heim_prize)
@@ -309,16 +316,19 @@ def generate(
 
 def main():
     args = sys.argv[1:]
-    if len(args) < 10:
+    if len(args) < 8:
         print(__doc__)
         sys.exit(1)
-    (odin_num, odin_start, odin_end, odin_prize, odin_cur,
-     heim_num, heim_start, heim_end, heim_prize, heim_cur) = [int(a) for a in args[:10]]
-    rounds   = int(args[10]) if len(args) > 10 else 14
-    interval = int(args[11]) if len(args) > 11 else 10800
-    medals   = int(args[12]) if len(args) > 12 else 60
-    generate(odin_num, odin_start, odin_end, odin_prize, odin_cur,
-             heim_num, heim_start, heim_end, heim_prize, heim_cur,
+    odin_type, odin_num, odin_start, odin_end = args[0], int(args[1]), int(args[2]), int(args[3])
+    heim_type, heim_num, heim_start, heim_end = args[4], int(args[5]), int(args[6]), int(args[7])
+    if odin_type not in PRIZE_MAP or heim_type not in PRIZE_MAP:
+        print(f'오류: 타입은 Championship 또는 Season 이어야 합니다.')
+        sys.exit(1)
+    rounds   = int(args[8])  if len(args) > 8  else 14
+    interval = int(args[9])  if len(args) > 9  else 10800
+    medals   = int(args[10]) if len(args) > 10 else 60
+    generate(odin_type, odin_num, odin_start, odin_end,
+             heim_type, heim_num, heim_start, heim_end,
              rounds, interval, medals)
 
 if __name__ == '__main__':
