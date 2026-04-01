@@ -22,7 +22,10 @@ BASE = "https://www.bnkrmall.co.kr"
 
 def fetch_product_status(gno):
     """watchlist 상품의 재고 상태를 상품 상세 페이지에서 직접 확인.
-    판단 기준: '일반구매하기' 버튼이 있으면 구매 가능, 없으면 품절.
+    판단 기준:
+    - class="sold_out" 있으면 품절
+    - class="end_reserv" 또는 class="type reservation end" 있으면 예약종료(구매불가)
+    - 위 두 조건 모두 없으면 구매 가능
     """
     url = f"{BASE}/goods/detail.do?gno={gno}"
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -33,8 +36,12 @@ def fetch_product_status(gno):
         name_m = re.search(r'name="goodsName"\s+value="([^"]+)"', html) \
               or re.search(r'<meta name="description"\s+content="([^"]+)"', html)
         name = name_m.group(1).strip() if name_m else gno
-        # 구매 가능 여부: class="sold_out" 없으면 재고 있음
-        sold_out = bool(re.search(r'class="sold_out[^"]*"', html))
+        # 품절: sold_out 클래스
+        sold_out_class = bool(re.search(r'class="sold_out[^"]*"', html))
+        # 예약종료: end_reserv 버튼 또는 reservation end 타입
+        reservation_ended = bool(re.search(r'class="[^"]*end_reserv[^"]*"', html)) \
+                         or bool(re.search(r'class="type reservation end"', html))
+        sold_out = sold_out_class or reservation_ended
         # 가격: hidden input price
         price_m = re.search(r'name="price"\s+value="(\d+)"', html)
         price = f"{int(price_m.group(1)):,}" if price_m else ""
