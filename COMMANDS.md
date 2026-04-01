@@ -4,18 +4,18 @@
 
 ---
 
-## `table pr`
+## `table update`
 
 **설명**: 구글 시트의 CSV 데이터를 GitHub fork 브랜치에 푸시하고 PR 링크를 안내한다.
 
 **사용법**:
-- `table pr` → 마지막으로 사용한 시트(config 저장값) 기준으로 실행
-- `table pr [구글시트URL]` → 해당 시트로 실행하고 config에 저장 (다음번 기본값이 됨)
+- `table update` → 마지막으로 사용한 시트(config 저장값) 기준으로 실행
+- `table update [구글시트URL]` → 해당 시트로 실행하고 config에 저장 (다음번 기본값이 됨)
 
 **예시**:
 ```
-table pr
-table pr https://docs.google.com/spreadsheets/d/1ARhJYwOU9.../edit
+table update
+table update https://docs.google.com/spreadsheets/d/1ARhJYwOU9.../edit
 ```
 
 **실행 방법**:
