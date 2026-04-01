@@ -15,7 +15,7 @@ Example:
     21 9412781 9563980 400000 9365492
 """
 
-import sys, os, re, copy, zipfile
+import sys, os, re, copy, zipfile, math
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 
@@ -74,17 +74,19 @@ def calc_table(groups, prize):
         g = prize * pct / 100
         bu = g / players / 3.2
         rows.append(dict(
-            name=name, players=players, pct=pct, group=round(g),
-            none=round(bu),
-            lvl2=round(bu * 1.5),
-            lvl3=round(bu * 2.0),
-            cp  =round(bu * 2.2),
-            cp2 =round(bu * 2.7),
-            full=round(bu * 3.2),
+            name=name, players=players, pct=pct, group=rnd(g),
+            none=rnd(bu),
+            lvl2=rnd(bu * 1.5),
+            lvl3=rnd(bu * 2.0),
+            cp  =rnd(bu * 2.2),
+            cp2 =rnd(bu * 2.7),
+            full=rnd(bu * 3.2),
         ))
     return rows
 
 def fmt(n): return f"{int(n):,}"
+
+def rnd(x): return math.floor(x + 0.5)   # 표준 반올림 (Python round()는 banker's rounding이라 .5가 짝수로 내려감)
 
 # ─── Namespace-safe XML modification ─────────────────────────────────────────
 
