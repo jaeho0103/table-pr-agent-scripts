@@ -40,6 +40,33 @@ python3 /home/node/.openclaw/workspace/scripts/create-tablecsv-pr.py "https://do
 
 ---
 
+## `arena [체인] [타입] [번호] [시작블록] [종료블록] [상금] [라운드수] [블록인터벌] [메달수]`
+
+**설명**: 아레나 보상 공지용 PPTX를 생성하고 파일로 전송한다.
+
+**사용법**:
+```
+arena Odin Championship 16 17889224 18040423 500000 14 10800 60
+arena Heimdall Season 21 9412781 9563980 400000
+```
+
+**파라미터**:
+- 체인: `Odin` | `Heimdall`
+- 타입: `Season` | `Championship`
+- 번호: 시즌/챔피언십 번호
+- 시작블록 / 종료블록: 블록 번호 (날짜 자동 계산)
+- 상금: 총 NCG 상금 (보상 테이블 자동 재계산)
+- 라운드수 / 블록인터벌 / 메달수: Championship일 때 필요 (기본값: 14 / 10800 / 60)
+
+**현재 기준 블록 설정**: `config/arena.json`에 `current_block`, `current_time` 저장
+- Odin/Heimdall 각각 다른 현재 블록을 `CURRENT_BLOCK` 환경변수로 전달
+
+**스크립트**: `scripts/create-arena-pptx.py`
+**템플릿**: `assets/arena/template.pptx` (슬라이드 3=Season, 슬라이드 4=Championship)
+**출력**: `output/arena/arena_[체인]_[타입]_[번호].pptx`
+
+---
+
 ## `sheet merge [브랜치시트URL]`
 
 **설명**: 브랜치 시트의 내용을 근본 시트(서브문서들)에 반영한다.
