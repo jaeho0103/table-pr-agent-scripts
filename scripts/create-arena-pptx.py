@@ -46,6 +46,7 @@ def block_to_date(target, ref_block, ref_time=REF_TIME, rate=8):
 # ─── Reward tables ────────────────────────────────────────────────────────────
 
 CHAMP_GROUPS = [
+    # Championship (1000 players) — update when confirmed
     ("Rank 1 – 5",     5,  10),
     ("Rank 6 – 10",    5,   8),
     ("Rank 11 – 17",   7,   9),
@@ -58,10 +59,11 @@ CHAMP_GROUPS = [
     ("Rank 501 – 1000",500, 2),
 ]
 SEASON_GROUPS = [
+    # Season (500 players) — verified against Championship 16 season data
     ("Rank 1 – 2",    2,   8),
     ("Rank 3 – 5",    3,   9),
     ("Rank 6 – 9",    4,   8),
-    ("Rank 10 – 15", 16,  10),
+    ("Rank 10 – 15",  6,  10),   # fixed: was 16
     ("Rank 16 – 25", 10,  12),
     ("Rank 26 – 50", 25,  18),
     ("Rank 51 – 87", 37,  16),
@@ -70,15 +72,22 @@ SEASON_GROUPS = [
     ("Rank 251 – 500",250, 3),
 ]
 
+# Staking/courage reward multipliers (relative to base unit):
+#   None=÷3.2, lv2=×1.5, lv3=×2.0, courage=×2.2, lv2+cp=×2.7, Full(lv3+cp)=×3.2
+# Full = group_reward / players  (i.e. bu × 3.2 = g / players)
 def calc_table(groups, prize):
     rows = []
     for name, players, pct in groups:
-        g = prize * pct // 100
-        bu = g / players / 3
+        g = prize * pct / 100
+        bu = g / players / 3.2
         rows.append(dict(
-            name=name, players=players, pct=pct, group=g,
-            basic=round(bu), lvl2=round(bu*1.5), lvl3=round(bu*2),
-            cp=round(bu*2), cp2=round(bu*2.5), cp3=round(bu*3)
+            name=name, players=players, pct=pct, group=round(g),
+            none=round(bu),
+            lvl2=round(bu * 1.5),
+            lvl3=round(bu * 2.0),
+            cp  =round(bu * 2.2),
+            cp2 =round(bu * 2.7),
+            full=round(bu * 3.2),
         ))
     return rows
 
@@ -184,12 +193,12 @@ def modify_slide(xml_bytes, chain, arena_type, number,
                 _set_cell_text(cells[1], fmt(rd['players']))
                 _set_cell_text(cells[2], str(rd['pct']))
                 _set_cell_text(cells[3], fmt(rd['group']))
-                _set_cell_text(cells[4], fmt(rd['basic']))
-                _set_cell_text(cells[5], fmt(rd['lvl2']))
-                _set_cell_text(cells[6], fmt(rd['lvl3']))
-                _set_cell_text(cells[7], fmt(rd['cp']))
-                _set_cell_text(cells[8], fmt(rd['cp2']))
-                _set_cell_text(cells[9], fmt(rd['cp3']))
+                _set_cell_text(cells[4], fmt(rd['none']))   # Each Player Gets (None)
+                _set_cell_text(cells[5], fmt(rd['lvl2']))   # staking lv2
+                _set_cell_text(cells[6], fmt(rd['lvl3']))   # staking lv3
+                _set_cell_text(cells[7], fmt(rd['cp']))     # couragepass
+                _set_cell_text(cells[8], fmt(rd['cp2']))    # staking lv2 + courage
+                _set_cell_text(cells[9], fmt(rd['full']))   # Full: staking lv3 + courage
         # Sum row
         sc = tr_list[-1].findall(f'{{{NS_A}}}tc')
         if len(sc) >= 4:
