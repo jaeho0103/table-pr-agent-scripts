@@ -40,6 +40,25 @@ python3 /home/node/.openclaw/workspace/scripts/create-tablecsv-pr.py "https://do
 
 ---
 
+## `sheet merge [브랜치시트URL]`
+
+**설명**: 브랜치 시트의 내용을 근본 시트(서브문서들)에 반영한다.
+Apps Script 웹앱을 호출해 브랜치 시트 탭 → 해당 서브문서 탭으로 데이터를 덮어쓴다.
+
+**사용법**:
+- `sheet merge https://docs.google.com/spreadsheets/d/시트ID/...`
+
+**동작 순서**:
+1. 브랜치 시트 URL에서 sheetId 추출
+2. Apps Script 웹앱 호출: `WEBAPP_URL?sheetId=...`
+3. 결과(updated / skipped / errors) 출력
+
+**설정**:
+- 웹앱 URL: `https://script.google.com/macros/s/AKfycbyxzhCZBFDf3tjRpzVXPnvZdsSR-3I3oQVuXXA_1yBqekHaSI-Ho_WfdiicbR4FxpgI7A/exec`
+- 근본 시트: `https://docs.google.com/spreadsheets/d/1IFRZ5bdwbIeDadq0HnpZwhLs3G6H5ZxSXwMbvq1erHE`
+
+---
+
 ## `건프라 모니터 시작` / `건프라 모니터 중지`
 
 **설명**: 반다이남코코리아몰 건프라 신상품 모니터링 cron을 활성화/비활성화한다.
