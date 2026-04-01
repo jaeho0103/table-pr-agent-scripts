@@ -93,7 +93,7 @@ def main():
 
     new_products = [p for p in products if p["gno"] not in known]
 
-    # Update state with all current gnos
+    # Update state with all current gnos (품절 포함 — 중복 알림 방지)
     all_gnos = list({p["gno"] for p in products} | known)
     save_state({"known_gnos": all_gnos})
 
@@ -102,17 +102,19 @@ def main():
         print(f"INIT: Saved {len(products)} products as baseline. No alerts.")
         sys.exit(0)
 
-    if not new_products:
+    # 품절 상품 제외 — 구매 가능한 신상품만 알림
+    alertable = [p for p in new_products if not p["sold_out"]]
+
+    if not alertable:
         print("NO_NEW")
         sys.exit(0)
 
     # Format alert
-    lines = [f"🔔 반다이남코코리아몰 건프라 신상품 {len(new_products)}개!"]
-    for p in new_products:
-        status = "❌품절" if p["sold_out"] else "✅구매가능"
+    lines = [f"🔔 반다이남코코리아몰 건프라 신상품 {len(alertable)}개!"]
+    for p in alertable:
         cap = f" ({p['caption']})" if p['caption'] else ""
         lines.append(f"\n• {p['name']}{cap}")
-        lines.append(f"  💰 {p['price']}원 {status}")
+        lines.append(f"  💰 {p['price']}원 ✅구매가능")
         if p["badge"]:
             lines.append(f"  🏷️ {p['badge']}")
         lines.append(f"  🔗 {p['link']}")
