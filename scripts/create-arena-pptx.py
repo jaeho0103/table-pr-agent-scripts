@@ -35,9 +35,13 @@ SLIDE_SEASON_RELS  = 'ppt/slides/_rels/slide3.xml.rels'
 
 # ─── Date helpers ─────────────────────────────────────────────────────────────
 
-REF_TIME = datetime(2026, 4, 1, 5, 58, 0, tzinfo=timezone.utc)
+# Reference points per chain (update before each run)
+ODIN_REF_BLOCK = 17_862_624
+ODIN_REF_TIME  = datetime(2026, 4, 1,  5, 58, 0, tzinfo=timezone.utc)
+HEIM_REF_BLOCK =  9_365_492
+HEIM_REF_TIME  = datetime(2026, 4, 1,  6, 56, 0, tzinfo=timezone.utc)
 
-def block_to_date(target, ref_block, ref_time=REF_TIME, rate=8):
+def block_to_date(target, ref_block, ref_time, rate=8):
     dt = ref_time + timedelta(seconds=(target - ref_block) * rate)
     d = dt.day
     sfx = 'th' if 11 <= d <= 13 else {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th')
@@ -231,12 +235,14 @@ def trim_prs_rels(rels_bytes, keep_rids):
 def generate(
     odin_num, odin_start, odin_end, odin_prize, odin_cur,
     heim_num, heim_start, heim_end, heim_prize, heim_cur,
-    rounds=14, interval=10800, medals=60
+    rounds=14, interval=10800, medals=60,
+    odin_ref_time=ODIN_REF_TIME, odin_ref_block=ODIN_REF_BLOCK,
+    heim_ref_time=HEIM_REF_TIME, heim_ref_block=HEIM_REF_BLOCK,
 ):
-    odin_start_date = block_to_date(odin_start, odin_cur)
-    odin_end_date   = block_to_date(odin_end,   odin_cur)
-    heim_start_date = block_to_date(heim_start, heim_cur)
-    heim_end_date   = block_to_date(heim_end,   heim_cur)
+    odin_start_date = block_to_date(odin_start, odin_ref_block, odin_ref_time)
+    odin_end_date   = block_to_date(odin_end,   odin_ref_block, odin_ref_time)
+    heim_start_date = block_to_date(heim_start, heim_ref_block, heim_ref_time)
+    heim_end_date   = block_to_date(heim_end,   heim_ref_block, heim_ref_time)
 
     print(f'[Odin] Championship {odin_num}: {fmt(odin_start)} ({odin_start_date}) ~ {fmt(odin_end)} ({odin_end_date}), Prize={fmt(odin_prize)}')
     print(f'[Heimdall] Season {heim_num}: {fmt(heim_start)} ({heim_start_date}) ~ {fmt(heim_end)} ({heim_end_date}), Prize={fmt(heim_prize)}')
