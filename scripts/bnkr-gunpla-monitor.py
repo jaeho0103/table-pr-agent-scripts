@@ -20,6 +20,31 @@ STATE_FILE = Path("/home/node/.openclaw/workspace/memory/bnkr-gunpla-state.json"
 BASE = "https://www.bnkrmall.co.kr"
 
 
+def fetch_product_status(gno):
+    """watchlist 상품의 재고 상태를 상품 상세 페이지에서 직접 확인.
+    판단 기준: '일반구매하기' 버튼이 있으면 구매 가능, 없으면 품절.
+    """
+    url = f"{BASE}/goods/detail.do?gno={gno}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+        # 상품명: hidden input goodsName
+        name_m = re.search(r'name="goodsName"\s+value="([^"]+)"', html) \
+              or re.search(r'<meta name="description"\s+content="([^"]+)"', html)
+        name = name_m.group(1).strip() if name_m else gno
+        # 구매 가능 여부: class="sold_out" 없으면 재고 있음
+        sold_out = bool(re.search(r'class="sold_out[^"]*"', html))
+        # 가격: hidden input price
+        price_m = re.search(r'name="price"\s+value="(\d+)"', html)
+        price = f"{int(price_m.group(1)):,}" if price_m else ""
+        return {"gno": gno, "name": name, "sold_out": sold_out,
+                "price": price, "caption": "", "badge": "",
+                "link": url}
+    except Exception:
+        return None
+
+
 def fetch_products():
     req = urllib.request.Request(URL, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=15) as resp:
@@ -96,6 +121,13 @@ def main():
 
     prev_sold_out = state.get("sold_out_status", {})
     watchlist     = set(state.get("watchlist", []))
+
+    # watchlist 중 카테고리 페이지에 없는 상품은 직접 상품 페이지에서 체크
+    for gno in watchlist:
+        if gno not in products_by_gno:
+            p = fetch_product_status(gno)
+            if p:
+                products_by_gno[gno] = p
 
     # 재입고 감지: watchlist 중 이전에 품절이었다가 지금 구매 가능한 것
     restocked = []
