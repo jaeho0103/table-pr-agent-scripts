@@ -186,17 +186,21 @@ def modify_slide(xml_bytes, chain, arena_type, number,
                 _set_cell_text(cells[1], fmt(rd['players']))
                 _set_cell_text(cells[2], str(rd['pct']))
                 _set_cell_text(cells[3], fmt(rd['group']))
-                _set_cell_text(cells[4], fmt(rd['none']))   # Each Player Gets (None)
-                _set_cell_text(cells[5], fmt(rd['lvl2']))   # staking lv2
-                _set_cell_text(cells[6], fmt(rd['lvl3']))   # staking lv3
-                _set_cell_text(cells[7], fmt(rd['cp']))     # couragepass
-                _set_cell_text(cells[8], fmt(rd['cp2']))    # staking lv2 + courage
-                _set_cell_text(cells[9], fmt(rd['full']))   # Full: staking lv3 + courage
+                _set_cell_text(cells[4], fmt(rd['none']))    # Each Player Gets (None)
+                _set_cell_text(cells[5], fmt(rd['lvl2']))    # staking lv2
+                _set_cell_text(cells[6], fmt(rd['lvl3']))    # staking lv3
+                _set_cell_text(cells[7], fmt(rd['cp']))      # couragepass
+                _set_cell_text(cells[8], fmt(rd['cp2']))     # staking lv2 + courage
+                _set_cell_text(cells[9], fmt(rd['full']))    # Full: staking lv3 + courage
+                if len(cells) >= 11:
+                    _set_cell_text(cells[10], fmt(rd['group']))  # Full Sum (= Group Reward)
         # Sum row
         sc = tr_list[-1].findall(f'{{{NS_A}}}tc')
         if len(sc) >= 4:
             _set_cell_text(sc[1], fmt(sum(r['players'] for r in reward_rows)))
             _set_cell_text(sc[3], fmt(prize))
+            if len(sc) >= 11:
+                _set_cell_text(sc[10], fmt(prize))  # Full Sum total
 
     new_xml = ET.tostring(root, encoding='unicode')
     new_xml = _restore_root_ns(xml_bytes, new_xml)
