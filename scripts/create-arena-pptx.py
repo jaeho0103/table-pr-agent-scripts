@@ -208,17 +208,21 @@ def modify_slide(xml_bytes, chain, arena_type, number,
 
 # ─── Presentation XML / rels trimmer ──────────────────────────────────────────
 
-def trim_presentation(prs_bytes, keep_rids):
-    """Remove all slides from sldIdLst except those in keep_rids."""
+def trim_presentation(prs_bytes, keep_rids, slide_order=None):
+    """Remove all slides from sldIdLst except those in keep_rids, reordering if slide_order given."""
     _register_ns(prs_bytes)
     root = ET.fromstring(prs_bytes)
-    ns = NS_P
-    lst = root.find(f'.//{{{ns}}}sldIdLst')
+    lst = root.find(f'.//{{{NS_P}}}sldIdLst')
     if lst is not None:
+        kept = {sldId.attrib.get(f'{{{NS_R}}}id', ''): sldId
+                for sldId in list(lst)
+                if sldId.attrib.get(f'{{{NS_R}}}id', '') in keep_rids}
         for sldId in list(lst):
-            rid = sldId.attrib.get(f'{{{NS_R}}}id', '')
-            if rid not in keep_rids:
-                lst.remove(sldId)
+            lst.remove(sldId)
+        ordered = slide_order if slide_order else list(kept.keys())
+        for rid in ordered:
+            if rid in kept:
+                lst.append(kept[rid])
     new_xml = ET.tostring(root, encoding='unicode')
     new_xml = _restore_root_ns(prs_bytes, new_xml)
     return ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + new_xml).encode('utf-8')
@@ -255,9 +259,11 @@ def generate(
     out_file = os.path.join(OUTPUT_DIR, f'arena_Odin_Championship{odin_num}_Heimdall_Season{heim_num}.pptx')
 
     # Determine which rIds correspond to slide3 and slide4
-    CHAMP_RIDS = {'rId9'}   # slide4
-    SEASON_RIDS = {'rId8'}  # slide3
+    CHAMP_RIDS = {'rId9'}   # slide4 = Championship
+    SEASON_RIDS = {'rId8'}  # slide3 = Season
     KEEP_RIDS = CHAMP_RIDS | SEASON_RIDS
+    # Slide order: Championship (Odin) first, Season (Heimdall) second
+    SLIDE_ORDER = ['rId9', 'rId8']
 
     with zipfile.ZipFile(TEMPLATE_PPTX, 'r') as zin, \
          zipfile.ZipFile(out_file, 'w', zipfile.ZIP_DEFLATED) as zout:
@@ -279,7 +285,7 @@ def generate(
                                     heim_prize)
 
             elif fn == 'ppt/presentation.xml':
-                data = trim_presentation(data, KEEP_RIDS)
+                data = trim_presentation(data, KEEP_RIDS, SLIDE_ORDER)
 
             elif fn == 'ppt/_rels/presentation.xml.rels':
                 data = trim_prs_rels(data, KEEP_RIDS)
