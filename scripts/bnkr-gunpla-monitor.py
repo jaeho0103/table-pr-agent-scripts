@@ -74,7 +74,7 @@ def fetch_products():
 def load_state():
     if STATE_FILE.exists():
         return json.loads(STATE_FILE.read_text())
-    return {"known_gnos": []}
+    return {"known_gnos": [], "sold_out_status": {}, "watchlist": []}
 
 
 def save_state(state):
@@ -92,32 +92,62 @@ def main():
     known = set(state.get("known_gnos", []))
 
     new_products = [p for p in products if p["gno"] not in known]
+    products_by_gno = {p["gno"]: p for p in products}
 
-    # Update state with all current gnos (품절 포함 — 중복 알림 방지)
+    prev_sold_out = state.get("sold_out_status", {})
+    watchlist     = set(state.get("watchlist", []))
+
+    # 재입고 감지: watchlist 중 이전에 품절이었다가 지금 구매 가능한 것
+    restocked = []
+    for gno in watchlist:
+        p = products_by_gno.get(gno)
+        if p and not p["sold_out"] and prev_sold_out.get(gno) is True:
+            restocked.append(p)
+
+    # 현재 품절 상태 저장 (watchlist + 신상품 대상)
+    new_sold_out = dict(prev_sold_out)
+    for p in products:
+        if p["gno"] in watchlist or p["gno"] not in known:
+            new_sold_out[p["gno"]] = p["sold_out"]
+
+    # Update state
     all_gnos = list({p["gno"] for p in products} | known)
-    save_state({"known_gnos": all_gnos})
+    save_state({"known_gnos": all_gnos, "sold_out_status": new_sold_out, "watchlist": list(watchlist)})
 
     if not known:
-        # First run — just save baseline, no alert
         print(f"INIT: Saved {len(products)} products as baseline. No alerts.")
         sys.exit(0)
 
     # 품절 상품 제외 — 구매 가능한 신상품만 알림
     alertable = [p for p in new_products if not p["sold_out"]]
 
-    if not alertable:
+    if not alertable and not restocked:
         print("NO_NEW")
         sys.exit(0)
 
-    # Format alert
-    lines = [f"🔔 반다이남코코리아몰 건프라 신상품 {len(alertable)}개!"]
-    for p in alertable:
-        cap = f" ({p['caption']})" if p['caption'] else ""
-        lines.append(f"\n• {p['name']}{cap}")
-        lines.append(f"  💰 {p['price']}원 ✅구매가능")
-        if p["badge"]:
-            lines.append(f"  🏷️ {p['badge']}")
-        lines.append(f"  🔗 {p['link']}")
+    lines = []
+
+    # 신상품 알림
+    if alertable:
+        lines.append(f"🔔 반다이남코코리아몰 건프라 신상품 {len(alertable)}개!")
+        for p in alertable:
+            cap = f" ({p['caption']})" if p['caption'] else ""
+            lines.append(f"\n• {p['name']}{cap}")
+            lines.append(f"  💰 {p['price']}원 ✅구매가능")
+            if p["badge"]:
+                lines.append(f"  🏷️ {p['badge']}")
+            lines.append(f"  🔗 {p['link']}")
+
+    # 재입고 알림
+    if restocked:
+        if lines:
+            lines.append("")
+        lines.append(f"📦 재입고 알림 {len(restocked)}개!")
+        for p in restocked:
+            cap = f" ({p['caption']})" if p['caption'] else ""
+            lines.append(f"\n• {p['name']}{cap}")
+            lines.append(f"  💰 {p['price']}원 ✅구매가능")
+            lines.append(f"  🔗 {p['link']}")
 
     print("\n".join(lines))
 
