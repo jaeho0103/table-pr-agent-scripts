@@ -118,22 +118,20 @@ def main():
         print(f"INIT: Saved {len(products)} products as baseline. No alerts.")
         sys.exit(0)
 
-    # 품절 상품 제외 — 구매 가능한 신상품만 알림
-    alertable = [p for p in new_products if not p["sold_out"]]
-
-    if not alertable and not restocked:
+    if not new_products and not restocked:
         print("NO_NEW")
         sys.exit(0)
 
     lines = []
 
-    # 신상품 알림
-    if alertable:
-        lines.append(f"🔔 반다이남코코리아몰 건프라 신상품 {len(alertable)}개!")
-        for p in alertable:
+    # 신상품 알림 (품절 포함 전체)
+    if new_products:
+        lines.append(f"🔔 반다이남코코리아몰 건프라 신상품 {len(new_products)}개!")
+        for p in new_products:
+            status = "❌품절" if p["sold_out"] else "✅구매가능"
             cap = f" ({p['caption']})" if p['caption'] else ""
             lines.append(f"\n• {p['name']}{cap}")
-            lines.append(f"  💰 {p['price']}원 ✅구매가능")
+            lines.append(f"  💰 {p['price']}원 {status}")
             if p["badge"]:
                 lines.append(f"  🏷️ {p['badge']}")
             lines.append(f"  🔗 {p['link']}")
